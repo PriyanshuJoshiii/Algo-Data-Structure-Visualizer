@@ -1,11 +1,19 @@
-// DOM Elements
+const algorithmBtn = document.getElementById('algorithm-btn');
+const datastructureBtn = document.getElementById('datastructure-btn');
+const algorithmSection = document.getElementById('algorithm-section');
+const datastructureSection = document.getElementById('datastructure-section');
 const algorithmSelect = document.getElementById('algorithm');
+const datastructureSelect = document.getElementById('datastructure');
 const arrayInput = document.getElementById('array-input');
+const arrayInputDs = document.getElementById('array-input-ds');
 const generateRandomBtn = document.getElementById('generate-random');
+const generateRandomDsBtn = document.getElementById('generate-random-ds');
 const startBtn = document.getElementById('start-btn');
 const pauseBtn = document.getElementById('pause-btn');
 const resetBtn = document.getElementById('reset-btn');
+const resetBtnDs = document.getElementById('reset-btn-ds');
 const speedSlider = document.getElementById('speed');
+const speedSliderDs = document.getElementById('speed-ds');
 const arrayContainer = document.getElementById('array-container');
 const graphContainer = document.getElementById('graph-container');
 const algorithmInfo = document.getElementById('algorithm-info');
@@ -14,16 +22,29 @@ const passCounter = document.getElementById('pass-counter');
 const comparisonDisplay = document.getElementById('comparison-display');
 const originalArrayValues = document.getElementById('original-array-values');
 const sortedArrayValues = document.getElementById('sorted-array-values');
+const pushBtn = document.getElementById('push-btn');
+const popBtn = document.getElementById('pop-btn');
+const enqueueBtn = document.getElementById('enqueue-btn');
+const dequeueBtn = document.getElementById('dequeue-btn');
+const stackQueueControls = document.querySelector('.stack-queue-controls');
+const stackControls = document.querySelector('.stack-controls');
+const queueControls = document.querySelector('.queue-controls');
+const rabinKarpInputs = document.getElementById('rabin-karp-inputs');
+const textInput = document.getElementById('text-input');
+const patternInput = document.getElementById('pattern-input');
 
-// Global variables
 let array = [];
-let originalArray = []; // Store the original array
+let originalArray = []; 
 let isRunning = false;
 let isPaused = false;
-let animationSpeed = 1000; // Default to 1 second
+let animationSpeed = 1000; 
 let currentAlgorithm = 'bubbleSort';
+let currentDatastructure = 'stack';
 
-// Algorithm information
+// Stack and Queue data structures
+let stack = [];
+let queue = [];
+
 const algorithmDetails = {
     bubbleSort: {
         info: "Bubble Sort is a simple sorting algorithm that repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order.",
@@ -33,32 +54,74 @@ const algorithmDetails = {
         info: "Merge Sort is a divide-and-conquer algorithm that recursively breaks down the problem into smaller subproblems until they become simple enough to solve directly.",
         complexity: "Time Complexity: O(n log n)\nSpace Complexity: O(n)"
     },
-    quickSort: {
-        info: "Quick Sort is a divide-and-conquer algorithm that picks an element as pivot and partitions the array around the pivot.",
-        complexity: "Time Complexity: O(n log n) average case, O(n²) worst case\nSpace Complexity: O(log n)"
-    },
     binarySearch: {
         info: "Binary Search is an efficient algorithm for finding an element in a sorted array by repeatedly dividing the search interval in half.",
         complexity: "Time Complexity: O(log n)\nSpace Complexity: O(1)"
     },
-    dfs: {
-        info: "Depth-First Search (DFS) is an algorithm for traversing or searching tree or graph data structures.",
-        complexity: "Time Complexity: O(V + E)\nSpace Complexity: O(V)"
+    rabinKarp: {
+        info: "Rabin-Karp is a string searching algorithm that uses hashing to find patterns in text. It uses a rolling hash function to efficiently compare substrings.",
+        complexity: "Time Complexity: O(n+m) average case, O(nm) worst case\nSpace Complexity: O(1)"
+    }
+};
+
+const datastructureDetails = {
+    stack: {
+        info: "Stack is a linear data structure that follows LIFO (Last In First Out) principle. Elements can only be added or removed from the top.",
+        complexity: "Time Complexity: O(1) for push and pop operations\nSpace Complexity: O(n)"
+    },
+    queue: {
+        info: "Queue is a linear data structure that follows FIFO (First In First Out) principle. Elements are added at the rear and removed from the front.",
+        complexity: "Time Complexity: O(1) for enqueue and dequeue operations\nSpace Complexity: O(n)"
     }
 };
 
 // Event Listeners
-algorithmSelect.addEventListener('change', updateAlgorithmInfo);
+algorithmBtn.addEventListener('click', () => switchVisualizationType('algorithm'));
+datastructureBtn.addEventListener('click', () => switchVisualizationType('datastructure'));
+algorithmSelect.addEventListener('change', () => {
+    updateAlgorithmInfo();
+    if (algorithmSelect.value === 'rabinKarp') {
+        rabinKarpInputs.style.display = 'block';
+        document.querySelector('.input-section').style.display = 'none';
+    } else {
+        rabinKarpInputs.style.display = 'none';
+        document.querySelector('.input-section').style.display = 'block';
+    }
+});
+datastructureSelect.addEventListener('change', updateDatastructureInfo);
 generateRandomBtn.addEventListener('click', generateRandomArray);
+generateRandomDsBtn.addEventListener('click', generateRandomArray);
 startBtn.addEventListener('click', startVisualization);
 pauseBtn.addEventListener('click', togglePause);
 resetBtn.addEventListener('click', resetVisualization);
+resetBtnDs.addEventListener('click', resetVisualization);
 speedSlider.addEventListener('input', updateSpeed);
+speedSliderDs.addEventListener('input', updateSpeed);
+pushBtn.addEventListener('click', pushOperation);
+popBtn.addEventListener('click', popOperation);
+enqueueBtn.addEventListener('click', enqueueOperation);
+dequeueBtn.addEventListener('click', dequeueOperation);
 
 // Initialize
 updateAlgorithmInfo();
 
 // Functions
+function switchVisualizationType(type) {
+    if (type === 'algorithm') {
+        algorithmBtn.classList.add('active');
+        datastructureBtn.classList.remove('active');
+        algorithmSection.style.display = 'block';
+        datastructureSection.style.display = 'none';
+        resetVisualization();
+    } else {
+        algorithmBtn.classList.remove('active');
+        datastructureBtn.classList.add('active');
+        algorithmSection.style.display = 'none';
+        datastructureSection.style.display = 'block';
+        resetVisualization();
+    }
+}
+
 function updateAlgorithmInfo() {
     currentAlgorithm = algorithmSelect.value;
     const details = algorithmDetails[currentAlgorithm];
@@ -66,14 +129,50 @@ function updateAlgorithmInfo() {
     complexityInfo.textContent = details.complexity;
 }
 
+function updateDatastructureInfo() {
+    currentDatastructure = datastructureSelect.value;
+    const details = datastructureDetails[currentDatastructure];
+    algorithmInfo.textContent = details.info;
+    complexityInfo.textContent = details.complexity;
+
+    if (currentDatastructure === 'stack') {
+        stackControls.style.display = 'block';
+        queueControls.style.display = 'none';
+    } else {
+        stackControls.style.display = 'none';
+        queueControls.style.display = 'block';
+    }
+}
+
 function generateRandomArray() {
-    array = Array.from({length: 7}, () => Math.floor(Math.random() * 100) + 1);
-    originalArray = [...array]; // Store a copy of the original array
+    const isDatastructure = datastructureSection.style.display !== 'none';
+    if (isDatastructure) {
+        array = Array.from({length: 5}, () => Math.floor(Math.random() * 100) + 1);
+    } else {
+        array = Array.from({length: 7}, () => Math.floor(Math.random() * 100) + 1);
+    }
+    originalArray = [...array];
     updateArrayDisplay();
 }
 
 function updateArrayDisplay() {
     arrayContainer.innerHTML = '';
+    
+    const isDatastructure = datastructureSection.style.display !== 'none';
+    if (isDatastructure) {
+        if (currentDatastructure === 'stack') {
+            arrayContainer.style.flexDirection = 'column-reverse';
+            arrayContainer.classList.add('stack-mode');
+            arrayContainer.classList.remove('queue-mode');
+        } else {
+            arrayContainer.style.flexDirection = 'row';
+            arrayContainer.classList.add('queue-mode');
+            arrayContainer.classList.remove('stack-mode');
+        }
+    } else {
+        arrayContainer.style.flexDirection = 'row';
+        arrayContainer.classList.remove('stack-mode', 'queue-mode');
+    }
     
     array.forEach((value, index) => {
         const block = document.createElement('div');
@@ -86,12 +185,9 @@ function updateArrayDisplay() {
 }
 
 function updateSpeed() {
-    // Convert slider value (1-100) to milliseconds (2000-500)
-    // This means:
-    // - Slider at 1: 2000ms (2 seconds)
-    // - Slider at 50: 1250ms (1.25 seconds)
-    // - Slider at 100: 500ms (0.5 seconds)
-    animationSpeed = 2000 - (speedSlider.value * 15);
+    const isDatastructure = datastructureSection.style.display !== 'none';
+    const slider = isDatastructure ? speedSliderDs : speedSlider;
+    animationSpeed = 2000 - (slider.value * 15);
 }
 
 function sleep(ms) {
@@ -103,34 +199,32 @@ async function startVisualization() {
     isRunning = true;
     isPaused = false;
     
-    const inputArray = arrayInput.value.split(',').map(num => parseInt(num.trim()));
-    if (inputArray.length > 0 && !inputArray.includes(NaN)) {
-        array = inputArray;
-        originalArray = [...array]; // Store a copy of the original array
-    }
-    
-    updateArrayDisplay();
-    
-    switch (currentAlgorithm) {
-        case 'bubbleSort':
-            await bubbleSort();
-            break;
-        case 'mergeSort':
-            await mergeSort(0, array.length - 1);
-            break;
-        case 'quickSort':
-            await quickSort(0, array.length - 1);
-            break;
-        case 'binarySearch':
-            await binarySearch();
-            break;
-        case 'dfs':
-            await dfs();
-            break;
-    }
-    
-    if (currentAlgorithm !== 'dfs' && currentAlgorithm !== 'binarySearch') {
-        showArrayComparison();
+    if (currentAlgorithm === 'rabinKarp') {
+        await rabinKarp();
+    } else {
+        const inputArray = arrayInput.value.split(',').map(num => parseInt(num.trim()));
+        if (inputArray.length > 0 && !inputArray.includes(NaN)) {
+            array = inputArray;
+            originalArray = [...array];
+        }
+        
+        updateArrayDisplay();
+        
+        switch (currentAlgorithm) {
+            case 'bubbleSort':
+                await bubbleSort();
+                break;
+            case 'mergeSort':
+                await mergeSort(0, array.length - 1);
+                break;
+            case 'binarySearch':
+                await binarySearch();
+                break;
+        }
+        
+        if (currentAlgorithm !== 'binarySearch') {
+            showArrayComparison();
+        }
     }
     
     isRunning = false;
@@ -145,12 +239,19 @@ function resetVisualization() {
     isRunning = false;
     isPaused = false;
     arrayContainer.innerHTML = '';
+    arrayContainer.classList.remove('string-container');
     graphContainer.innerHTML = '';
     graphContainer.style.display = 'none';
     arrayContainer.style.display = 'flex';
     document.querySelector('.pointer')?.remove();
     passCounter.textContent = 'Pass: 0';
     comparisonDisplay.style.display = 'none';
+    arrayContainer.style.flexDirection = 'row';
+    arrayContainer.classList.remove('stack-mode', 'queue-mode');
+    array = [];
+    originalArray = [];
+    textInput.value = '';
+    patternInput.value = '';
 }
 
 function showArrayComparison() {
@@ -171,6 +272,104 @@ function showArrayComparison() {
         valueElement.textContent = value;
         sortedArrayValues.appendChild(valueElement);
     });
+}
+
+// Stack Operations
+async function stackOperations() {
+    const blocks = document.querySelectorAll('.array-block');
+    let passCount = 0;
+    
+    // Push operation
+    for (let i = 0; i < array.length; i++) {
+        if (isPaused) {
+            await new Promise(resolve => {
+                const checkPause = setInterval(() => {
+                    if (!isPaused) {
+                        clearInterval(checkPause);
+                        resolve();
+                    }
+                }, 100);
+            });
+        }
+        
+        passCount++;
+        passCounter.textContent = `Pass: ${passCount}`;
+        
+        blocks[i].classList.add('pushing');
+        await sleep(animationSpeed);
+        blocks[i].classList.remove('pushing');
+        blocks[i].classList.add('pushed');
+    }
+    
+    // Pop operation
+    for (let i = array.length - 1; i >= 0; i--) {
+        if (isPaused) {
+            await new Promise(resolve => {
+                const checkPause = setInterval(() => {
+                    if (!isPaused) {
+                        clearInterval(checkPause);
+                        resolve();
+                    }
+                }, 100);
+            });
+        }
+        
+        passCount++;
+        passCounter.textContent = `Pass: ${passCount}`;
+        
+        blocks[i].classList.add('popping');
+        await sleep(animationSpeed);
+        blocks[i].classList.remove('popping', 'pushed');
+    }
+}
+
+// Queue Operations
+async function queueOperations() {
+    const blocks = document.querySelectorAll('.array-block');
+    let passCount = 0;
+    
+    // Enqueue operation
+    for (let i = 0; i < array.length; i++) {
+        if (isPaused) {
+            await new Promise(resolve => {
+                const checkPause = setInterval(() => {
+                    if (!isPaused) {
+                        clearInterval(checkPause);
+                        resolve();
+                    }
+                }, 100);
+            });
+        }
+        
+        passCount++;
+        passCounter.textContent = `Pass: ${passCount}`;
+        
+        blocks[i].classList.add('enqueueing');
+        await sleep(animationSpeed);
+        blocks[i].classList.remove('enqueueing');
+        blocks[i].classList.add('enqueued');
+    }
+    
+    // Dequeue operation
+    for (let i = 0; i < array.length; i++) {
+        if (isPaused) {
+            await new Promise(resolve => {
+                const checkPause = setInterval(() => {
+                    if (!isPaused) {
+                        clearInterval(checkPause);
+                        resolve();
+                    }
+                }, 100);
+            });
+        }
+        
+        passCount++;
+        passCounter.textContent = `Pass: ${passCount}`;
+        
+        blocks[i].classList.add('dequeueing');
+        await sleep(animationSpeed);
+        blocks[i].classList.remove('dequeueing', 'enqueued');
+    }
 }
 
 // Algorithm Implementations
@@ -218,6 +417,31 @@ async function mergeSort(start, end) {
     if (start >= end) return;
     
     const mid = Math.floor((start + end) / 2);
+    
+    // Show division step
+    const blocks = document.querySelectorAll('.array-block');
+    for (let i = start; i <= end; i++) {
+        blocks[i].classList.add('dividing');
+    }
+    await sleep(animationSpeed);
+    
+    // Show left subarray
+    for (let i = start; i <= mid; i++) {
+        blocks[i].classList.add('left-subarray');
+    }
+    await sleep(animationSpeed);
+    
+    // Show right subarray
+    for (let i = mid + 1; i <= end; i++) {
+        blocks[i].classList.add('right-subarray');
+    }
+    await sleep(animationSpeed);
+    
+    // Clear highlights
+    for (let i = start; i <= end; i++) {
+        blocks[i].classList.remove('dividing', 'left-subarray', 'right-subarray');
+    }
+    
     await mergeSort(start, mid);
     await mergeSort(mid + 1, end);
     await merge(start, mid, end);
@@ -237,6 +461,12 @@ async function merge(start, mid, end) {
     const tempArray = new Array(end - start + 1);
     let tempIndex = 0;
     
+    // Show merging process
+    for (let i = start; i <= end; i++) {
+        blocks[i].classList.add('merging');
+    }
+    await sleep(animationSpeed);
+    
     while (i < left.length && j < right.length) {
         if (isPaused) {
             await new Promise(resolve => {
@@ -249,33 +479,37 @@ async function merge(start, mid, end) {
             });
         }
         
-        movePointer(blocks[k]);
-        blocks[k].classList.add('comparing');
+        // Highlight elements being compared
+        if (start + i < blocks.length) blocks[start + i].classList.add('comparing');
+        if (mid + 1 + j < blocks.length) blocks[mid + 1 + j].classList.add('comparing');
         await sleep(animationSpeed);
         
         if (left[i] <= right[j]) {
             tempArray[tempIndex] = left[i];
+            if (start + i < blocks.length) blocks[start + i].classList.add('moving');
             i++;
         } else {
             tempArray[tempIndex] = right[j];
+            if (mid + 1 + j < blocks.length) blocks[mid + 1 + j].classList.add('moving');
             j++;
         }
         
-        blocks[k].classList.add('moving');
         await sleep(500);
-        blocks[k].classList.remove('moving');
-        blocks[k].classList.remove('comparing');
+        
+        // Clear highlights
+        if (start + i < blocks.length) blocks[start + i].classList.remove('comparing', 'moving');
+        if (mid + 1 + j < blocks.length) blocks[mid + 1 + j].classList.remove('comparing', 'moving');
+        
         k++;
         tempIndex++;
     }
     
     // Copy remaining elements of left array
     while (i < left.length) {
-        movePointer(blocks[k]);
+        if (start + i < blocks.length) blocks[start + i].classList.add('moving');
         tempArray[tempIndex] = left[i];
-        blocks[k].classList.add('moving');
         await sleep(500);
-        blocks[k].classList.remove('moving');
+        if (start + i < blocks.length) blocks[start + i].classList.remove('moving');
         i++;
         k++;
         tempIndex++;
@@ -283,11 +517,10 @@ async function merge(start, mid, end) {
     
     // Copy remaining elements of right array
     while (j < right.length) {
-        movePointer(blocks[k]);
+        if (mid + 1 + j < blocks.length) blocks[mid + 1 + j].classList.add('moving');
         tempArray[tempIndex] = right[j];
-        blocks[k].classList.add('moving');
         await sleep(500);
-        blocks[k].classList.remove('moving');
+        if (mid + 1 + j < blocks.length) blocks[mid + 1 + j].classList.remove('moving');
         j++;
         k++;
         tempIndex++;
@@ -298,60 +531,13 @@ async function merge(start, mid, end) {
         array[start + i] = tempArray[i];
     }
     
+    // Clear merging highlights
+    for (let i = start; i <= end; i++) {
+        blocks[i].classList.remove('merging');
+    }
+    
     // Update the display
     updateArrayDisplay();
-}
-
-async function quickSort(start, end) {
-    if (start >= end) return;
-    
-    let passCount = parseInt(passCounter.textContent.split(': ')[1]) || 0;
-    passCount++;
-    passCounter.textContent = `Pass: ${passCount}`;
-    
-    const pivot = await partition(start, end);
-    await quickSort(start, pivot - 1);
-    await quickSort(pivot + 1, end);
-}
-
-async function partition(start, end) {
-    const blocks = document.querySelectorAll('.array-block');
-    const pivot = array[end];
-    let i = start - 1;
-    
-    for (let j = start; j < end; j++) {
-        if (isPaused) {
-            await new Promise(resolve => {
-                const checkPause = setInterval(() => {
-                    if (!isPaused) {
-                        clearInterval(checkPause);
-                        resolve();
-                    }
-                }, 100);
-            });
-        }
-        
-        movePointer(blocks[j]);
-        blocks[j].classList.add('comparing');
-        blocks[end].classList.add('comparing');
-        await sleep(animationSpeed);
-        
-        if (array[j] < pivot) {
-            i++;
-            if (i !== j) {
-                await swapElements(i, j);
-            }
-        }
-        
-        blocks[j].classList.remove('comparing');
-        blocks[end].classList.remove('comparing');
-    }
-    
-    if (i + 1 !== end) {
-        await swapElements(i + 1, end);
-    }
-    
-    return i + 1;
 }
 
 async function binarySearch() {
@@ -433,97 +619,6 @@ async function binarySearch() {
     alert(`${target} not found in the array after ${passCount} passes`);
 }
 
-async function dfs() {
-    // Create a simple graph for visualization
-    const graph = {
-        0: [1, 2],
-        1: [3, 4],
-        2: [5, 6],
-        3: [],
-        4: [],
-        5: [],
-        6: []
-    };
-    
-    arrayContainer.style.display = 'none';
-    graphContainer.style.display = 'block';
-    graphContainer.innerHTML = '';
-    
-    // Create nodes and edges
-    const nodePositions = {
-        0: {x: 400, y: 50},
-        1: {x: 200, y: 150},
-        2: {x: 600, y: 150},
-        3: {x: 100, y: 250},
-        4: {x: 300, y: 250},
-        5: {x: 500, y: 250},
-        6: {x: 700, y: 250}
-    };
-    
-    // Create edges
-    for (const [node, neighbors] of Object.entries(graph)) {
-        for (const neighbor of neighbors) {
-            const edge = document.createElement('div');
-            edge.className = 'edge';
-            const start = nodePositions[node];
-            const end = nodePositions[neighbor];
-            
-            const length = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
-            const angle = Math.atan2(end.y - start.y, end.x - start.x);
-            
-            edge.style.width = `${length}px`;
-            edge.style.left = `${start.x}px`;
-            edge.style.top = `${start.y}px`;
-            edge.style.transform = `rotate(${angle}rad)`;
-            
-            graphContainer.appendChild(edge);
-        }
-    }
-    
-    // Create nodes
-    for (const [node, pos] of Object.entries(nodePositions)) {
-        const nodeElement = document.createElement('div');
-        nodeElement.className = 'node';
-        nodeElement.textContent = node;
-        nodeElement.style.left = `${pos.x - 20}px`;
-        nodeElement.style.top = `${pos.y - 20}px`;
-        graphContainer.appendChild(nodeElement);
-    }
-    
-    // Perform DFS
-    const visited = new Set();
-    let passCount = 0;
-    
-    async function dfsVisit(node) {
-        passCount++;
-        passCounter.textContent = `Pass: ${passCount}`;
-        
-        if (isPaused) {
-            await new Promise(resolve => {
-                const checkPause = setInterval(() => {
-                    if (!isPaused) {
-                        clearInterval(checkPause);
-                        resolve();
-                    }
-                }, 100);
-            });
-        }
-        
-        visited.add(node);
-        const nodeElement = document.querySelector(`.node:nth-child(${parseInt(node) + 1})`);
-        nodeElement.classList.add('visited');
-        await sleep(animationSpeed);
-        
-        for (const neighbor of graph[node]) {
-            if (!visited.has(neighbor)) {
-                await dfsVisit(neighbor);
-            }
-        }
-    }
-    
-    await dfsVisit(0);
-}
-
 function createPointer() {
     const pointer = document.createElement('div');
     pointer.className = 'pointer';
@@ -576,4 +671,238 @@ async function swapElements(index1, index2) {
     block1.classList.remove('moving');
     block2.classList.remove('moving');
     updateArrayDisplay();
+}
+
+// Stack Operations
+async function pushOperation() {
+    if (isRunning) return;
+    isRunning = true;
+
+    const value = prompt('Enter a number to push:');
+    if (value === null || value === '') {
+        isRunning = false;
+        return;
+    }
+
+    const numValue = parseInt(value);
+    if (isNaN(numValue)) {
+        alert('Please enter a valid number');
+        isRunning = false;
+        return;
+    }
+
+    array.push(numValue);
+    updateArrayDisplay();
+    
+    const blocks = document.querySelectorAll('.array-block');
+    const newBlock = blocks[blocks.length - 1];
+    
+    newBlock.classList.add('pushing');
+    await sleep(animationSpeed);
+    newBlock.classList.remove('pushing');
+    newBlock.classList.add('pushed');
+    
+    isRunning = false;
+}
+
+async function popOperation() {
+    if (isRunning || array.length === 0) return;
+    isRunning = true;
+
+    const blocks = document.querySelectorAll('.array-block');
+    const lastBlock = blocks[blocks.length - 1];
+    
+    lastBlock.classList.add('popping');
+    await sleep(animationSpeed);
+    
+    array.pop();
+    updateArrayDisplay();
+    
+    isRunning = false;
+}
+
+// Queue Operations
+async function enqueueOperation() {
+    if (isRunning) return;
+    isRunning = true;
+
+    const value = prompt('Enter a number to enqueue:');
+    if (value === null || value === '') {
+        isRunning = false;
+        return;
+    }
+
+    const numValue = parseInt(value);
+    if (isNaN(numValue)) {
+        alert('Please enter a valid number');
+        isRunning = false;
+        return;
+    }
+
+    array.push(numValue);
+    updateArrayDisplay();
+    
+    const blocks = document.querySelectorAll('.array-block');
+    const newBlock = blocks[blocks.length - 1];
+    
+    newBlock.classList.add('enqueueing');
+    await sleep(animationSpeed);
+    newBlock.classList.remove('enqueueing');
+    newBlock.classList.add('enqueued');
+    
+    isRunning = false;
+}
+
+async function dequeueOperation() {
+    if (isRunning || array.length === 0) return;
+    isRunning = true;
+
+    const blocks = document.querySelectorAll('.array-block');
+    const firstBlock = blocks[0];
+    
+    firstBlock.classList.add('dequeueing');
+    await sleep(animationSpeed);
+    
+    array.shift();
+    updateArrayDisplay();
+    
+    isRunning = false;
+}
+
+// Rabin-Karp algorithm implementation
+async function rabinKarp() {
+    const text = textInput.value.toLowerCase();
+    const pattern = patternInput.value.toLowerCase();
+    
+    if (!text || !pattern) {
+        alert('Please enter both text and pattern');
+        return;
+    }
+
+    if (pattern.length > text.length) {
+        alert('Pattern length cannot be greater than text length');
+        return;
+    }
+
+    // Clear previous visualization
+    arrayContainer.innerHTML = '';
+    arrayContainer.classList.add('string-container');
+
+    // Create character blocks for text
+    for (let i = 0; i < text.length; i++) {
+        const charBlock = document.createElement('div');
+        charBlock.className = 'char-block';
+        charBlock.textContent = text[i];
+        charBlock.setAttribute('data-index', i);
+        arrayContainer.appendChild(charBlock);
+    }
+
+    const MOD = 11; // Using mod 11 as requested
+    const d = 26; // Base for hashing (a=1, b=2, c=3, ..., z=26)
+    const h = Math.pow(d, pattern.length - 1) % MOD;
+    
+    // Calculate pattern hash
+    let patternHash = 0;
+    for (let i = 0; i < pattern.length; i++) {
+        const charValue = pattern.charCodeAt(i) - 96; // a=1, b=2, c=3, ..., z=26
+        patternHash = (d * patternHash + charValue) % MOD;
+    }
+
+    // Calculate initial text hash
+    let textHash = 0;
+    for (let i = 0; i < pattern.length; i++) {
+        const charValue = text.charCodeAt(i) - 96; // a=1, b=2, c=3, ..., z=26
+        textHash = (d * textHash + charValue) % MOD;
+    }
+
+    let passCount = 0;
+    const blocks = document.querySelectorAll('.char-block');
+
+    // Add hash value display
+    const hashDisplay = document.createElement('div');
+    hashDisplay.className = 'hash-value';
+    arrayContainer.appendChild(hashDisplay);
+
+    // Slide the pattern over text
+    for (let i = 0; i <= text.length - pattern.length; i++) {
+        passCount++;
+        passCounter.textContent = `Pass: ${passCount}`;
+
+        if (isPaused) {
+            await new Promise(resolve => {
+                const checkPause = setInterval(() => {
+                    if (!isPaused) {
+                        clearInterval(checkPause);
+                        resolve();
+                    }
+                }, 100);
+            });
+        }
+
+        // Highlight current window
+        for (let j = 0; j < pattern.length; j++) {
+            blocks[i + j].classList.add('comparing');
+        }
+
+        // Update hash display
+        hashDisplay.textContent = `Pattern Hash: ${patternHash} | Window Hash: ${textHash}`;
+
+        await sleep(animationSpeed);
+
+        // Check for match
+        if (patternHash === textHash) {
+            let match = true;
+            for (let j = 0; j < pattern.length; j++) {
+                if (text[i + j] !== pattern[j]) {
+                    match = false;
+                    blocks[i + j].classList.add('mismatch');
+                    break;
+                }
+            }
+
+            if (match) {
+                for (let j = 0; j < pattern.length; j++) {
+                    blocks[i + j].classList.remove('comparing');
+                    blocks[i + j].classList.add('matching');
+                }
+            } else {
+                // Clear mismatch highlights after a short delay
+                setTimeout(() => {
+                    for (let j = 0; j < pattern.length; j++) {
+                        blocks[i + j].classList.remove('mismatch');
+                    }
+                }, animationSpeed);
+            }
+        } else {
+            // If hash doesn't match, mark as mismatch
+            for (let j = 0; j < pattern.length; j++) {
+                blocks[i + j].classList.add('mismatch');
+            }
+            // Clear mismatch highlights after a short delay
+            setTimeout(() => {
+                for (let j = 0; j < pattern.length; j++) {
+                    blocks[i + j].classList.remove('mismatch');
+                }
+            }, animationSpeed);
+        }
+
+        // Clear comparing highlights
+        for (let j = 0; j < pattern.length; j++) {
+            blocks[i + j].classList.remove('comparing');
+        }
+
+        // Calculate hash for next window
+        if (i < text.length - pattern.length) {
+            const oldCharValue = text.charCodeAt(i) - 96;
+            const newCharValue = text.charCodeAt(i + pattern.length) - 96;
+            textHash = (d * (textHash - oldCharValue * h) + newCharValue) % MOD;
+            if (textHash < 0) textHash += MOD;
+        }
+
+        await sleep(animationSpeed);
+    }
+
+    // Show results
+    const matches = document.querySelectorAll('.char-block.matching').length / pattern.length;
+    alert(`Found ${matches} matches in ${passCount} passes`);
 } 
