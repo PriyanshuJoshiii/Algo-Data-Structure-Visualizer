@@ -3,38 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Algorithm Visualizer</title>
+    <title>Algorithm And Data Structure Visualizer</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Algorithm Visualizer</h1>
+        <h1>Algorithm And Data Structure Visualizer</h1>
         
         <div class="main-content">
             <div class="controls">
-                <div class="algorithm-selector">
-                    <label for="algorithm">Select Algorithm:</label>
-                    <select id="algorithm">
-                        <option value="bubbleSort">Bubble Sort</option>
-                        <option value="mergeSort">Merge Sort</option>
-                        <option value="quickSort">Quick Sort</option>
-                        <option value="binarySearch">Binary Search</option>
-                        <option value="dfs">Depth First Search</option>
-                    </select>
+                <div class="visualization-type">
+                    <label>Select Visualization Type:</label>
+                    <div class="type-buttons">
+                        <button id="algorithm-btn" class="type-btn active">Algorithms</button>
+                        <button id="datastructure-btn" class="type-btn">Data Structures</button>
+                    </div>
                 </div>
 
-                <div class="input-section">
-                    <label for="array-input">Enter Array (comma-separated numbers):</label>
-                    <input type="text" id="array-input" placeholder="e.g., 64,34,25,12,22,11,90">
-                    <button id="generate-random">Generate Random Array</button>
+                <div id="algorithm-section" class="visualization-section-content">
+                    <div class="algorithm-selector">
+                        <label for="algorithm">Select Algorithm:</label>
+                        <select id="algorithm">
+                            <option value="bubbleSort">Bubble Sort</option>
+                            <option value="mergeSort">Merge Sort</option>
+                            <option value="binarySearch">Binary Search</option>
+                            <option value="rabinKarp">Rabin-Karp String Matching</option>
+                        </select>
+                    </div>
+
+                    <div class="input-section">
+                        <label for="array-input">Enter Array (comma-separated numbers):</label>
+                        <input type="text" id="array-input" placeholder="e.g., 64,34,25,12,22,11,90">
+                        <button id="generate-random">Generate Random Array</button>
+                    </div>
+
+                    <div id="rabin-karp-inputs" class="rabin-karp-inputs" style="display: none;">
+                        <div class="input-group">
+                            <label for="text-input">Enter Text:</label>
+                            <input type="text" id="text-input" placeholder="e.g., abcabcabc">
+                        </div>
+                        <div class="input-group">
+                            <label for="pattern-input">Enter Pattern:</label>
+                            <input type="text" id="pattern-input" placeholder="e.g., abc">
+                        </div>
+                    </div>
+
+                    <div class="speed-controls">
+                        <label for="speed">Animation Speed:</label>
+                        <input type="range" id="speed" min="1" max="100" value="50">
+                        <button id="start-btn">Start</button>
+                        <button id="pause-btn">Pause</button>
+                        <button id="reset-btn">Reset</button>
+                    </div>
                 </div>
 
-                <div class="speed-controls">
-                    <label for="speed">Animation Speed:</label>
-                    <input type="range" id="speed" min="1" max="100" value="50">
-                    <button id="start-btn">Start</button>
-                    <button id="pause-btn">Pause</button>
-                    <button id="reset-btn">Reset</button>
+                <div id="datastructure-section" class="visualization-section-content" style="display: none;">
+                    <div class="datastructure-selector">
+                        <label for="datastructure">Select Data Structure:</label>
+                        <select id="datastructure">
+                            <option value="stack">Stack</option>
+                            <option value="queue">Queue</option>
+                        </select>
+                    </div>
+
+                    <div class="input-section">
+                        <label for="array-input-ds">Enter Initial Values (comma-separated numbers):</label>
+                        <input type="text" id="array-input-ds" placeholder="e.g., 64,34,25,12,22">
+                        <button id="generate-random-ds">Generate Random Values</button>
+                    </div>
+
+                    <div class="stack-queue-controls">
+                        <div class="stack-controls">
+                            <button id="push-btn">Push</button>
+                            <button id="pop-btn">Pop</button>
+                        </div>
+                        <div class="queue-controls">
+                            <button id="enqueue-btn">Enqueue</button>
+                            <button id="dequeue-btn">Dequeue</button>
+                        </div>
+                    </div>
+
+                    <div class="speed-controls">
+                        <label for="speed-ds">Animation Speed:</label>
+                        <input type="range" id="speed-ds" min="1" max="100" value="50">
+                        <button id="reset-btn-ds">Reset</button>
+                    </div>
                 </div>
             </div>
 
@@ -58,7 +111,7 @@
                 </div>
 
                 <div class="info-panel">
-                    <h3>Algorithm Information</h3>
+                    <h3>Information</h3>
                     <div id="algorithm-info"></div>
                     <div id="complexity"></div>
                 </div>
