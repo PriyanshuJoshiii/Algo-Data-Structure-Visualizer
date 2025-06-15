@@ -376,11 +376,11 @@ async function queueOperations() {
 async function bubbleSort() {
     const blocks = document.querySelectorAll('.array-block');
     let passCount = 0;
-    
+
     for (let i = 0; i < array.length - 1; i++) {
         passCount++;
         document.getElementById('pass-counter').textContent = `Pass: ${passCount}`;
-        
+
         for (let j = 0; j < array.length - i - 1; j++) {
             if (isPaused) {
                 await new Promise(resolve => {
@@ -392,25 +392,66 @@ async function bubbleSort() {
                     }, 100);
                 });
             }
-            
-            movePointer(blocks[j]);
+
+            // Add 'comparing' class
             blocks[j].classList.add('comparing');
             blocks[j + 1].classList.add('comparing');
-            
+
             await sleep(animationSpeed);
-            
+
             if (array[j] > array[j + 1]) {
                 await swapElements(j, j + 1);
+
+                // Refresh block references after swap
+                const newBlocks = document.querySelectorAll('.array-block');
+                blocks[j] = newBlocks[j];
+                blocks[j + 1] = newBlocks[j + 1];
             }
-            
+
+            // Remove 'comparing' class after comparison/swap
             blocks[j].classList.remove('comparing');
             blocks[j + 1].classList.remove('comparing');
         }
-        blocks[array.length - i - 1].classList.add('sorted');
     }
-    blocks[0].classList.add('sorted');
-    document.querySelector('.pointer')?.remove();
+
     alert(`Sorting completed in ${passCount} passes`);
+}
+
+async function swapElements(index1, index2) {
+    const blocks = document.querySelectorAll('.array-block');
+    const block1 = blocks[index1];
+    const block2 = blocks[index2];
+
+    // Get positions
+    const pos1 = block1.getBoundingClientRect();
+    const pos2 = block2.getBoundingClientRect();
+    const containerRect = arrayContainer.getBoundingClientRect();
+
+    const x1 = pos1.left - containerRect.left;
+    const x2 = pos2.left - containerRect.left;
+
+    // Animate swap
+    block1.style.transform = `translateX(${x2 - x1}px)`;
+    block2.style.transform = `translateX(${x1 - x2}px)`;
+
+    await sleep(animationSpeed);
+
+    // Swap data in array
+    [array[index1], array[index2]] = [array[index2], array[index1]];
+
+    // Swap heights and text content manually
+    const tempHeight = block1.style.height;
+    const tempText = block1.textContent;
+
+    block1.style.height = block2.style.height;
+    block1.textContent = block2.textContent;
+
+    block2.style.height = tempHeight;
+    block2.textContent = tempText;
+
+    // Reset animation
+    block1.style.transform = '';
+    block2.style.transform = '';
 }
 
 async function mergeSort(start, end) {
@@ -480,55 +521,85 @@ async function merge(start, mid, end) {
         }
         
         // Highlight elements being compared
-        if (start + i < blocks.length) blocks[start + i].classList.add('comparing');
-        if (mid + 1 + j < blocks.length) blocks[mid + 1 + j].classList.add('comparing');
+        const leftIndex = start + i;
+        const rightIndex = mid + 1 + j;
+        
+        if (leftIndex < blocks.length) blocks[leftIndex].classList.add('comparing');
+        if (rightIndex < blocks.length) blocks[rightIndex].classList.add('comparing');
         await sleep(animationSpeed);
         
         if (left[i] <= right[j]) {
             tempArray[tempIndex] = left[i];
-            if (start + i < blocks.length) blocks[start + i].classList.add('moving');
+            if (leftIndex < blocks.length) {
+                blocks[leftIndex].classList.add('moving');
+                blocks[leftIndex].style.transform = `translateY(-20px)`;
+            }
             i++;
         } else {
             tempArray[tempIndex] = right[j];
-            if (mid + 1 + j < blocks.length) blocks[mid + 1 + j].classList.add('moving');
+            if (rightIndex < blocks.length) {
+                blocks[rightIndex].classList.add('moving');
+                blocks[rightIndex].style.transform = `translateY(-20px)`;
+            }
             j++;
         }
         
-        await sleep(500);
+        await sleep(animationSpeed);
         
-        // Clear highlights
-        if (start + i < blocks.length) blocks[start + i].classList.remove('comparing', 'moving');
-        if (mid + 1 + j < blocks.length) blocks[mid + 1 + j].classList.remove('comparing', 'moving');
+        // Clear highlights and reset transforms
+        if (leftIndex < blocks.length) {
+            blocks[leftIndex].classList.remove('comparing', 'moving');
+            blocks[leftIndex].style.transform = '';
+        }
+        if (rightIndex < blocks.length) {
+            blocks[rightIndex].classList.remove('comparing', 'moving');
+            blocks[rightIndex].style.transform = '';
+        }
         
-        k++;
         tempIndex++;
     }
     
     // Copy remaining elements of left array
     while (i < left.length) {
-        if (start + i < blocks.length) blocks[start + i].classList.add('moving');
+        const leftIndex = start + i;
+        if (leftIndex < blocks.length) {
+            blocks[leftIndex].classList.add('moving');
+            blocks[leftIndex].style.transform = `translateY(-20px)`;
+        }
         tempArray[tempIndex] = left[i];
-        await sleep(500);
-        if (start + i < blocks.length) blocks[start + i].classList.remove('moving');
+        await sleep(animationSpeed);
+        if (leftIndex < blocks.length) {
+            blocks[leftIndex].classList.remove('moving');
+            blocks[leftIndex].style.transform = '';
+        }
         i++;
-        k++;
         tempIndex++;
     }
     
     // Copy remaining elements of right array
     while (j < right.length) {
-        if (mid + 1 + j < blocks.length) blocks[mid + 1 + j].classList.add('moving');
+        const rightIndex = mid + 1 + j;
+        if (rightIndex < blocks.length) {
+            blocks[rightIndex].classList.add('moving');
+            blocks[rightIndex].style.transform = `translateY(-20px)`;
+        }
         tempArray[tempIndex] = right[j];
-        await sleep(500);
-        if (mid + 1 + j < blocks.length) blocks[mid + 1 + j].classList.remove('moving');
+        await sleep(animationSpeed);
+        if (rightIndex < blocks.length) {
+            blocks[rightIndex].classList.remove('moving');
+            blocks[rightIndex].style.transform = '';
+        }
         j++;
-        k++;
         tempIndex++;
     }
     
-    // Copy back to original array
+    // Copy back to original array and update visualization
     for (let i = 0; i < tempArray.length; i++) {
         array[start + i] = tempArray[i];
+        if (start + i < blocks.length) {
+            blocks[start + i].textContent = tempArray[i];
+            blocks[start + i].classList.add('sorted');
+        }
     }
     
     // Clear merging highlights
@@ -536,8 +607,7 @@ async function merge(start, mid, end) {
         blocks[i].classList.remove('merging');
     }
     
-    // Update the display
-    updateArrayDisplay();
+    await sleep(animationSpeed);
 }
 
 async function binarySearch() {
@@ -546,17 +616,20 @@ async function binarySearch() {
     updateArrayDisplay();
     
     const target = parseInt(prompt('Enter the number to search for:'));
-    if (isNaN(target)) return;
+    if (isNaN(target)) {
+        alert('Please enter a valid number');
+        return;
+    }
     
     const blocks = document.querySelectorAll('.array-block');
     let left = 0;
     let right = array.length - 1;
     let passCount = 0;
     
-    // Highlight the initial search range
-    for (let i = 0; i < array.length; i++) {
-        blocks[i].classList.add('search-range');
-    }
+    // Clear any existing highlights
+    blocks.forEach(block => {
+        block.classList.remove('comparing', 'search-range', 'sorted');
+    });
     
     while (left <= right) {
         passCount++;
@@ -577,24 +650,20 @@ async function binarySearch() {
         
         // Clear previous highlights
         blocks.forEach(block => {
-            block.classList.remove('comparing');
+            block.classList.remove('comparing', 'search-range');
         });
         
         // Highlight current search range
-        for (let i = 0; i < array.length; i++) {
-            if (i < left || i > right) {
-                blocks[i].classList.remove('search-range');
-            } else {
-                blocks[i].classList.add('search-range');
-            }
+        for (let i = left; i <= right; i++) {
+            blocks[i].classList.add('search-range');
         }
         
-        // Highlight and move pointer to middle element
+        // Highlight middle element being compared
         blocks[mid].classList.add('comparing');
-        movePointer(blocks[mid]);
         await sleep(animationSpeed);
         
         if (array[mid] === target) {
+            // Found the target
             blocks[mid].classList.remove('comparing', 'search-range');
             blocks[mid].classList.add('sorted');
             alert(`Found ${target} at index ${mid} in ${passCount} passes`);
@@ -602,12 +671,13 @@ async function binarySearch() {
         }
         
         if (array[mid] < target) {
+            // Search in right half
             left = mid + 1;
         } else {
+            // Search in left half
             right = mid - 1;
         }
         
-        blocks[mid].classList.remove('comparing');
         await sleep(animationSpeed);
     }
     
@@ -617,60 +687,6 @@ async function binarySearch() {
     });
     
     alert(`${target} not found in the array after ${passCount} passes`);
-}
-
-function createPointer() {
-    const pointer = document.createElement('div');
-    pointer.className = 'pointer';
-    return pointer;
-}
-
-function movePointer(element) {
-    const pointer = document.querySelector('.pointer') || createPointer();
-    if (!document.querySelector('.pointer')) {
-        arrayContainer.appendChild(pointer);
-    }
-    
-    const rect = element.getBoundingClientRect();
-    const containerRect = arrayContainer.getBoundingClientRect();
-    
-    pointer.style.left = `${rect.left - containerRect.left + rect.width / 2}px`;
-}
-
-async function swapElements(index1, index2) {
-    const blocks = document.querySelectorAll('.array-block');
-    const block1 = blocks[index1];
-    const block2 = blocks[index2];
-    
-    // Get positions
-    const pos1 = block1.getBoundingClientRect();
-    const pos2 = block2.getBoundingClientRect();
-    const containerRect = arrayContainer.getBoundingClientRect();
-    
-    // Calculate relative positions
-    const x1 = pos1.left - containerRect.left;
-    const x2 = pos2.left - containerRect.left;
-    
-    // Add moving class and set initial positions
-    block1.classList.add('moving');
-    block2.classList.add('moving');
-    
-    // Animate the movement
-    block1.style.transform = `translateX(${x2 - x1}px)`;
-    block2.style.transform = `translateX(${x1 - x2}px)`;
-    
-    // Wait for animation
-    await sleep(500);
-    
-    // Swap the values
-    [array[index1], array[index2]] = [array[index2], array[index1]];
-    
-    // Reset transforms and update display
-    block1.style.transform = '';
-    block2.style.transform = '';
-    block1.classList.remove('moving');
-    block2.classList.remove('moving');
-    updateArrayDisplay();
 }
 
 // Stack Operations
@@ -905,4 +921,29 @@ async function rabinKarp() {
     // Show results
     const matches = document.querySelectorAll('.char-block.matching').length / pattern.length;
     alert(`Found ${matches} matches in ${passCount} passes`);
-} 
+}
+
+// Add new CSS classes for merge sort visualization
+const style = document.createElement('style');
+style.textContent = `
+    .dividing {
+        background-color: #9b59b6 !important;
+        box-shadow: 0 0 15px rgba(155, 89, 182, 0.5);
+    }
+    
+    .left-subarray {
+        background-color: #e74c3c !important;
+        box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+    }
+    
+    .right-subarray {
+        background-color: #3498db !important;
+        box-shadow: 0 0 15px rgba(52, 152, 219, 0.5);
+    }
+    
+    .merging {
+        background-color: #f1c40f !important;
+        box-shadow: 0 0 15px rgba(241, 196, 15, 0.5);
+    }
+`;
+document.head.appendChild(style); 
